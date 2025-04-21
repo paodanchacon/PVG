@@ -3,7 +3,7 @@
 # the screen, bouncing off the edges
 from uagame import Window
 import pygame
-from pygame import QUIT, Color
+from pygame import QUIT, Color, MOUSEBUTTONUP
 from pygame.time import Clock
 from pygame.event import get as get_events
 from pygame.draw import circle as draw_circle
@@ -11,21 +11,9 @@ from pygame.draw import circle as draw_circle
 def main():
     # create the window
     window =create_window()
-    # create the game
-    #   create clock
-    clock = Clock()
-    #   create small dot
-    small_color = 'blue'
-    small_radius = 30
-    small_center = [50,75]
-    small_velocity = [1,2]
-    #   create big dot
-    big_color = 'green'
-    big_radius = 40
-    big_center = [200,100]
-    big_velocity = [2,1]
+    game = create_game(window)
     # play game
-    play_game(window, big_color, big_center, big_radius, big_velocity, clock, small_color, small_center, small_radius, small_velocity)
+    play_game(game)
     # close window
     window.close()
 
@@ -36,23 +24,42 @@ def create_window():
     window.set_bg_color('black')
     return window
 
+def create_game(window,):
+    # Create a Game object for poke the dots
+    game = Game()
+    game.window = window
+    game.frame_rate = 90
+    game.close_selected = False
+    game.clock = Clock()
+    game.small_dot = create_dot('red', [50,75], 30, [1,2], window)
+    game.big_dot = create_dot('blue', [200,100], 40, [2,1], window)
+    return game
 
-def play_game(window, big_color, big_center, big_radius, big_velocity, clock, small_color, small_center, small_radius, small_velocity):
-    close_selected = False
+def create_dot(color, center, radius, speed, window):
+    dot = Dot()
+    dot.color = color
+    dot.center = center
+    dot.radius = radius
+    dot.velocity = speed
+    dot.window = window
+    return dot
+
+def play_game(game):
+    
     # while not player has selected close
-    while not close_selected:
+    while not game.close_selected:
         # play frame
         #   handle events
-        close_selected = handle_events()
+        handle_events(game)
         #   draw game
-        draw_game(window, big_color, big_center, big_radius, small_color, small_center, small_radius)
+        draw_game(game)
         #   update game
-        update_game(window, big_center, big_radius, big_velocity, clock, small_color, small_center, small_radius, small_velocity)
+        update_game(game)
     
 
 
-def handle_events():
-    closed = False
+def handle_events(game):
+    
     event_list = get_events()
     # for event in event_list
     for event in event_list:
@@ -60,45 +67,65 @@ def handle_events():
         #       if event category equals close
         if event.type == QUIT:
             # remember play has selected close
-            closed = True
-    return closed
+            game.close_selected = True
 
 
-def draw_game(window, big_color, big_center, big_radius, small_color, small_center, small_radius):
-    window.clear()
+def draw_game(game):
+    game.window.clear()
     # draw small dot
     # draw big dot
-    draw_dot(window, big_color, big_center, big_radius)
-    draw_dot(window, small_color, small_center, small_radius)
+    draw_dot(game.small_dot)
+    draw_dot(game.big_dot)
     # update display
-    window.update()
+    game.window.update()
 
 
 
-def update_game(window, big_center, big_radius, big_velocity, clock, small_color, small_center, small_radius, small_velocity):
-    frame_rate = 90
+def update_game(game):
+
     # move small dot
-    move_dot(window, small_center, small_radius, small_velocity)
+    move_dot(game.small_dot)
     # move big dot
-    move_dot(window, big_center, big_radius, big_velocity)
+    move_dot(game.big_dot)
     # control frame rate
-    clock.tick(frame_rate)
+    game.clock.tick(game.frame_rate)
 
-def draw_dot(window, color_string, center, radius):
-    surface = window.get_surface()
-    color = Color(color_string)
-    draw_circle(surface, color, center, radius)
+def draw_dot(dot):
+    surface = dot.window.get_surface()
+    color = Color(dot.color)
+    draw_circle(surface, color, dot.center, dot.radius, 3)
 
-def move_dot(window, center, radius, velocity):
-    size = (window.get_width(), window.get_height())
+def move_dot(dot):
+    size = (dot.window.get_width(), dot.window.get_height())
     # for index in sequence 0 to 1
     for index in range(0,2):
         # update center at index
         #   add velocity at index to center at index
-        center[index] = center[index] + velocity[index]
+        dot.center[index] = dot.center[index] + dot.velocity[index]
         #   if dot edge outside window
-        if (center[index] <= radius) or (center[index] + radius >= size[index]):
+        if (dot.center[index] < dot.radius) or (dot.center[index] + dot.radius > size[index]):
+        #if ((center[index] == radius) or (center[index] == size[index])):
             # neagte velocity at index
-            velocity[index] = -velocity[index]
+            dot.velocity[index] = -dot.velocity[index]
+# class game
+class Game:
+    # An object in this class represents a complete game
+    # - window
+    # - frame_rate
+    # - close_selected
+    # - clock
+    # - small_dot
+    # - big_dot
+    pass
+
+# class dot
+class Dot:
+    # An object in this class represents a colored circle that can move
+    # - color
+    # - center
+    # - radius
+    # - velocity
+    # - window
+    pass
 
 main()
