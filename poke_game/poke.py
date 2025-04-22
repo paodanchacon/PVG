@@ -1,10 +1,11 @@
-# Poke the Dots V1
-# This is a graphical game where two dots mov around
+# Poke the Dots V3
+# This is a graphical game where two dots move around
 # the screen, bouncing off the edges
 from uagame import Window
+from random import randint
 import pygame
-from pygame import QUIT, Color, MOUSEBUTTONUP
-from pygame.time import Clock
+from pygame import QUIT, Color, MOUSEBUTTONUP, KEYDOWN, K_p
+from pygame.time import Clock, get_ticks
 from pygame.event import get as get_events
 from pygame.draw import circle as draw_circle
 
@@ -21,6 +22,8 @@ def main():
 def create_window():
     # Create a window for the game, open it, and return it
     window = Window('Poke the Dots', 500, 400)
+    window.set_font_size(64)
+    window.set_font_color('white')
     window.set_bg_color('black')
     return window
 
@@ -33,6 +36,9 @@ def create_game(window,):
     game.clock = Clock()
     game.small_dot = create_dot('red', [50,75], 30, [1,2], window)
     game.big_dot = create_dot('blue', [200,100], 40, [2,1], window)
+    randomize_dot(game.small_dot)
+    randomize_dot(game.big_dot)
+    game.score = 0
     return game
 
 def create_dot(color, center, radius, speed, window):
@@ -68,10 +74,22 @@ def handle_events(game):
         if event.type == QUIT:
             # remember play has selected close
             game.close_selected = True
+        
+        elif event.type == MOUSEBUTTONUP:
+            handle_mouse_up(game)
 
+        elif event.type == KEYDOWN:
+            if event.key == K_p:
+                handle_mouse_up(game)
+
+
+def handle_mouse_up(game):
+    randomize_dot(game.small_dot)
+    randomize_dot(game.big_dot)
 
 def draw_game(game):
     game.window.clear()
+    draw_score(game)
     # draw small dot
     # draw big dot
     draw_dot(game.small_dot)
@@ -79,7 +97,9 @@ def draw_game(game):
     # update display
     game.window.update()
 
-
+def draw_score(game):
+    string = 'Score: ' +str(game.score)
+    game.window.draw_string(string, 0, 0)
 
 def update_game(game):
 
@@ -89,6 +109,7 @@ def update_game(game):
     move_dot(game.big_dot)
     # control frame rate
     game.clock.tick(game.frame_rate)
+    game.score =get_ticks() // 1000
 
 def draw_dot(dot):
     surface = dot.window.get_surface()
@@ -107,6 +128,12 @@ def move_dot(dot):
         #if ((center[index] == radius) or (center[index] == size[index])):
             # neagte velocity at index
             dot.velocity[index] = -dot.velocity[index]
+
+
+def randomize_dot(dot):
+    size = (dot.window.get_width(), dot.window.get_height())
+    for index in range (0, 2):
+        dot.center[index] = randint(dot.radius, size[index] - dot.radius)
 # class game
 class Game:
     # An object in this class represents a complete game
