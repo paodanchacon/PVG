@@ -3,6 +3,7 @@
 # the screen, bouncing off the edges. The usser tries 
 
 from uagame import Window
+from math import sqrt
 from random import randint
 from pygame import QUIT, Color, MOUSEBUTTONUP, KEYDOWN, K_p
 from pygame.time import Clock, get_ticks
@@ -35,7 +36,7 @@ class Game:
         self._small_dot.randomize()
         self._big_dot.randomize()
         self._score = 0
-
+        self._continue_game = True
 
     def _adjust_window(self):
         self._window.set_font_name('ariel')
@@ -71,7 +72,7 @@ class Game:
             # remember play has selected close
             self._close_selected = True
         
-        elif event.type == MOUSEBUTTONUP:
+        elif self._continue_game and event.type == MOUSEBUTTONUP:
             self.handle_mouse_up(event)
 
 
@@ -87,20 +88,37 @@ class Game:
         # draw big dot
         self._small_dot.draw()
         self._big_dot.draw()
+        if not self._continue_game:
+            self.draw_game_over()
         # update display
         self._window.update()
 
 
     def update(self):
-
-        # move small dot
-        self._small_dot.move()
-        # move big dot
-        self._big_dot.move()
+        if self._continue_game:
+            # move small dot
+            self._small_dot.move()
+            # move big dot
+            self._big_dot.move()
+            self._score = get_ticks() // 1000
         # control frame rate
         self._clock.tick(self._frame_rate)
-        self._score = get_ticks() // 1000
-        
+        if self._small_dot.intersects(self._big_dot):
+            self._continue_game = False
+
+
+    def draw_game_over(self):
+        string = "Game Over"
+        font_color = self._small_dot.get_color()
+        bg_color = self._big_dot.get_color()
+        original_font_color = self._window.get_font_color()
+        original_bg_color = self._window.get_bg_color()
+        self._window.set_font_color(font_color)
+        self._window.set_bg_color(bg_color)
+        height = self._window.get_height() - self._window.get_font_height()
+        self._window.draw_string(string, 0, height)
+        self._window.set_font_color(original_font_color)
+        self._window.set_bg_color(original_bg_color)
 
     def draw_score(self):
         string = 'Score: ' +str(self._score)
@@ -143,8 +161,19 @@ class Dot:
         draw_circle(surface, color, self._center, self._radius, 3)
 
 
+    def intersects(self, dot):
+        distance = sqrt((self._center[0] - dot._center[0])**2 + (self._center[1] - dot._center[1])**2)
+        return distance <= self._radius + dot._radius
+    
+
+    def get_color(self):
+        return self._color
+    
+
     def randomize(self):
         size = (self._window.get_width(), self._window.get_height())
         for index in range (0, 2):
             self._center[index] = randint(self._radius, size[index] - self._radius)
+
+
 main()
